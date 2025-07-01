@@ -1,6 +1,17 @@
 const axios = require('axios');
 
 module.exports = async (req, res) => {
+  // --- 1) CORS headers ---
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // --- 2) GitHub fetch logic ---
   const token = process.env.GITHUB_TOKEN;
   const owner = 'sh-bd';
   const repo = 'nesco-portal';
@@ -15,10 +26,13 @@ module.exports = async (req, res) => {
       }
     });
 
+    // Decode the Base64 content
     const content = Buffer.from(response.data.content, 'base64').toString('utf-8');
+
     res.setHeader('Content-Type', 'application/json');
-    res.status(200).send(content);
+    return res.status(200).send(content);
   } catch (err) {
-    res.status(500).json({ error: 'GitHub API error', details: err.message });
+    console.error('GitHub API error:', err);
+    return res.status(500).json({ error: 'GitHub API error', details: err.message });
   }
 };
